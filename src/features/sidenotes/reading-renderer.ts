@@ -4,6 +4,7 @@ import {
 	type MarkdownPostProcessorContext,
 	MarkdownView,
 } from 'obsidian';
+import { stripColorMarkers } from '../../utils/color-markers';
 import { getAppDocuments } from '../../utils/app-documents';
 import type { SidenoteLayoutController } from './layout';
 import { createReadingSidenoteInstanceId } from './instance-id';
@@ -474,7 +475,7 @@ function matchDomItemsToSource(
 }
 
 function normalizeComparableText(text: string): string {
-	return text
+	return stripColorMarkers(text
 		.replace(/`[^`]*`/g, '')
 		.replace(/\$+[^$]*\$+/g, '')
 		.replace(/\uFFFC/g, '')
@@ -484,11 +485,11 @@ function normalizeComparableText(text: string): string {
 		.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2')
 		.replace(/\[\[([^\]]+)\]\]/g, '$1')
 		.replace(/==/g, '')
-		.replace(/[🟡🟢🔴🟣🔵⚫]/gu, '')
+		.replace(/⚫\uFE0F?/gu, '')
 		.replace(/[*_~]/g, '')
 		.replace(/\\([{}])/g, '$1')
 		.replace(/\s+/g, ' ')
-		.trim();
+		.trim());
 }
 
 function collectDomMatches(root: HTMLElement): DomMatch[] {

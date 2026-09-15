@@ -12,12 +12,15 @@ import { registerInlineCode } from './features/inline-code';
 import { registerLinkStyles } from './features/links';
 import { registerMathAdjustments } from './features/math';
 import { registerNegativeHeadings } from './features/negative-headings';
+import { registerNoteFonts } from './features/note-font';
 import { registerSidenotes } from './features/sidenotes';
 import { registerTableAdjustments } from './features/tables';
 import {
 	type DividerStyle,
 	type EditingSuiteSettings,
 	type LinkStyle,
+	OBSIDIAN_DEFAULT_EDITOR_WIDTH,
+	OBSIDIAN_DEFAULT_DISPLAY_MATH_MARGIN,
 	type TableStyle,
 	normalizeDisplayMathMargin,
 	normalizeEditorWidth,
@@ -41,15 +44,20 @@ export default class EditingSuitePlugin extends Plugin {
 
 		this.editorBasicsController = registerEditorBasics(
 			this,
-			() => this.settings.editorWidth,
+			() => this.settings.editorWidthUsesDefault
+				? null
+				: this.settings.editorWidth,
 			() => this.settings.seamlessTypography,
 			(width) => this.setEditorWidth(width),
 			() => this.settings.features.customLists,
 			() => this.settings.collapseHeadingMarkers,
+			() => this.settings.collapseBlockIds,
 		);
 		this.mathController = registerMathAdjustments(
 			this,
-			() => this.settings.mathDisplayMargin,
+			() => this.settings.mathDisplayMarginUsesDefault
+				? null
+				: this.settings.mathDisplayMargin,
 			() => this.settings.mathOverflowScroll,
 		);
 		this.tableController = registerTableAdjustments(
@@ -72,6 +80,7 @@ export default class EditingSuitePlugin extends Plugin {
 		);
 		this.featureControllers = [
 			this.editorBasicsController,
+			registerNoteFonts(this),
 			registerFocusIndicator(
 				this,
 				() => this.settings.focusIndicator,
@@ -83,6 +92,7 @@ export default class EditingSuitePlugin extends Plugin {
 			registerColorHighlights(
 				this,
 				() => this.settings.features.colorHighlights,
+				() => this.settings.colorHighlightWave,
 			),
 			registerColoredText(
 				this,
@@ -129,10 +139,21 @@ export default class EditingSuitePlugin extends Plugin {
 
 	setEditorWidth(value: number): void {
 		const width = normalizeEditorWidth(value);
-		if (width === this.settings.editorWidth) {
+		if (
+			width === this.settings.editorWidth &&
+			!this.settings.editorWidthUsesDefault
+		) {
 			return;
 		}
 		this.settings.editorWidth = width;
+		this.settings.editorWidthUsesDefault = false;
+		this.editorBasicsController.refresh();
+		this.scheduleSettingsSave();
+	}
+
+	resetEditorWidth(): void {
+		this.settings.editorWidth = OBSIDIAN_DEFAULT_EDITOR_WIDTH;
+		this.settings.editorWidthUsesDefault = true;
 		this.editorBasicsController.refresh();
 		this.scheduleSettingsSave();
 	}
@@ -155,12 +176,33 @@ export default class EditingSuitePlugin extends Plugin {
 		this.scheduleSettingsSave();
 	}
 
+	setCollapseBlockIds(value: boolean): void {
+		if (value === this.settings.collapseBlockIds) {
+			return;
+		}
+		this.settings.collapseBlockIds = value;
+		this.app.workspace.updateOptions();
+		this.scheduleSettingsSave();
+	}
+
 	setMathDisplayMargin(value: number): void {
 		const margin = normalizeDisplayMathMargin(value);
-		if (margin === this.settings.mathDisplayMargin) {
+		if (
+			margin === this.settings.mathDisplayMargin &&
+			!this.settings.mathDisplayMarginUsesDefault
+		) {
 			return;
 		}
 		this.settings.mathDisplayMargin = margin;
+		this.settings.mathDisplayMarginUsesDefault = false;
+		this.mathController.refresh();
+		this.scheduleSettingsSave();
+	}
+
+	resetMathDisplayMargin(): void {
+		this.settings.mathDisplayMargin =
+			OBSIDIAN_DEFAULT_DISPLAY_MATH_MARGIN;
+		this.settings.mathDisplayMarginUsesDefault = true;
 		this.mathController.refresh();
 		this.scheduleSettingsSave();
 	}

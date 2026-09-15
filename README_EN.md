@@ -13,8 +13,29 @@ Editing Suite is an Obsidian plugin that improves the writing experience while k
 - Adjust the document width with a slider
 - Hold `Alt` and use the mouse wheel to adjust the width quickly
 - Collapse heading hash markers in Live Preview and reveal them at the heading start
+- Fold trailing or directly attached `^id` block IDs until their owning block is selected
 - Show a focus indicator for the active line, heading level, and nested list level
 - Use `Edit and reading mode alignment (Experimental)` to align common block spacing and positions
+
+### Per-note fonts
+
+Use the `font` or `字体` property to select a font for the current note:
+
+```yaml
+---
+font: Microsoft YaHei
+---
+```
+
+The Chinese property name is supported as an alias:
+
+```yaml
+---
+字体: SimSun
+---
+```
+
+The property value input can search installed system fonts and preview each suggestion. The font applies only to the current note in both editing and reading modes. If both properties are present, `font` takes precedence.
 
 ### Tables
 
@@ -37,7 +58,7 @@ Editing Suite is an Obsidian plugin that improves the writing experience while k
 ### Code
 
 - Refine inline code styling
-- Copy inline code by clicking it and show copy feedback
+- Copy inline code by clicking it in Reading View and show copy feedback
 - Add a title bar, language name, and language icon to code blocks
 - Support line numbers, long-line wrapping, and the native copy button
 - Keep the code block structure consistent between editing and reading modes
@@ -58,6 +79,7 @@ Colored text uses bold syntax with a circular Emoji marker:
 **🟡Yellow text**
 **🟢Green text**
 **🔴Red text**
+**🟠Orange text**
 **🟣Purple text**
 **🔵Blue text**
 ```
@@ -72,11 +94,13 @@ Colorful highlights extend Obsidian's `==text==` syntax:
 ==🟡Yellow highlight==
 ==🟢Green highlight==
 ==🔴Red highlight==
+==🟠Orange highlight==
 ==🟣Purple highlight==
 ==🔵Blue highlight==
 ```
 
-The color Emoji is hidden in Live Preview and Reading View, then revealed when the cursor enters the range. Ordinary `==highlight==` syntax keeps Obsidian's default style.
+The color Emoji is hidden in Live Preview and Reading View. On Obsidian 1.14 and later, focusing the range shows Obsidian's interactive color swatch. Ordinary `==highlight==` syntax keeps Obsidian's default style.
+The underline wave can be disabled independently without changing the color background or swatch interaction.
 
 ### Cloze
 
@@ -136,11 +160,21 @@ Add a marker directive to the first item of an ordinary Markdown ordered list:
 
 Numeric, upper- and lowercase alphabetic, upper- and lowercase Roman, and custom prefix or suffix formats are supported. The underlying document remains an Obsidian ordered list, preserving native indentation, folding, and list interactions.
 
+Append `-` after the marker directive to remove the visual spacing between the list and adjacent content. This works in the main document, quotes, Callouts, and nested lists, independently of experimental mode alignment:
+
+```md
+> [!note]
+> Callout content
+>
+> 1. {(1)}- First item
+> 2. Second item
+```
+
 ## Settings
 
 The settings interface contains two pages:
 
-- `Editor`: Document width, heading markers, focus indicator, mode alignment, tables, links, math, code, and dividers
+- `Editor`: Document width, per-note fonts, heading markers, focus indicator, mode alignment, tables, links, math, code, and dividers
 - `Extensions`: Colored text, colorful highlights, cloze, negative headings, sidenotes, and custom lists
 
 Feature toggles and style options apply immediately after they are saved.

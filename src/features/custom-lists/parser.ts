@@ -21,6 +21,12 @@ export interface MarkerSpec {
 	suffix: string;
 }
 
+export interface LeadingDirective {
+	compact: boolean;
+	pattern: string;
+	raw: string;
+}
+
 interface ListRuntimeState {
 	nextIndex: number;
 	spec: MarkerSpec;
@@ -78,7 +84,10 @@ export function parseCustomListEntries(
 				activeLists.delete(indentWidth);
 				continue;
 			}
-			listState = { spec, nextIndex: 0 };
+			listState = {
+				nextIndex: 0,
+				spec,
+			};
 			activeLists.set(indentWidth, listState);
 			replaceTo = contentFrom + directive.raw.length;
 		}
@@ -127,12 +136,13 @@ export function getMarkerDisplayColumns(text: string): number {
 
 export function parseLeadingDirective(
 	text: string,
-): { pattern: string; raw: string } | null {
-	const match = /^\{([^}]+)\}(\s*)/u.exec(text);
+): LeadingDirective | null {
+	const match = /^\{([^}]+)\}(-)?(\s*)/u.exec(text);
 	if (!match) {
 		return null;
 	}
 	return {
+		compact: match[2] === '-',
 		pattern: match[1] ?? '',
 		raw: match[0],
 	};

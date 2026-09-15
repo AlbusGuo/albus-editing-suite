@@ -3,11 +3,13 @@ import {
 	getMarkerDisplayColumns,
 	parseLeadingDirective,
 	resolveMarkerSpec,
+	type LeadingDirective,
 	type MarkerSpec,
 } from './parser';
 
 const ITEM_CLASS = 'editing-suite-custom-list-item';
 const LIST_CLASS = 'editing-suite-custom-list';
+const COMPACT_LIST_CLASS = 'editing-suite-compact-custom-list';
 const MARKER_ATTRIBUTE = 'data-editing-suite-custom-list-marker';
 const MARKER_WIDTH_PROPERTY = '--editing-suite-custom-list-marker-width';
 
@@ -38,7 +40,7 @@ function hasValidDirective(items: NodeListOf<HTMLLIElement>): boolean {
 
 function getDirective(
 	item: HTMLLIElement,
-): { pattern: string; raw: string } | null {
+): LeadingDirective | null {
 	return parseLeadingDirective(getInlineRoot(item).textContent ?? '');
 }
 
@@ -47,6 +49,8 @@ function applyMarkers(
 	items: NodeListOf<HTMLLIElement>,
 ): void {
 	let currentSpec: MarkerSpec | null = null;
+	let currentCompact = false;
+	let hasCompactItems = false;
 	let currentIndex = 0;
 	let markerColumns = 3;
 	items.forEach((item) => {
@@ -58,13 +62,15 @@ function applyMarkers(
 				return;
 			}
 			currentSpec = nextSpec;
+			currentCompact = directive.compact;
 			currentIndex = 0;
-			stripLeadingDirective(item);
+			stripLeadingDirective(item, directive);
 		}
 		if (!currentSpec) {
 			return;
 		}
 		item.classList.add(ITEM_CLASS);
+		hasCompactItems ||= currentCompact;
 		const markerText = formatMarkerText(currentSpec, currentIndex);
 		item.setAttribute(
 			MARKER_ATTRIBUTE,
@@ -77,11 +83,12 @@ function applyMarkers(
 		currentIndex += 1;
 	});
 	list.classList.add(LIST_CLASS);
+	list.classList.toggle(COMPACT_LIST_CLASS, hasCompactItems);
 	list.style.setProperty(MARKER_WIDTH_PROPERTY, `${markerColumns}ch`);
 }
 
 function clearListState(list: HTMLOListElement): void {
-	list.classList.remove(LIST_CLASS);
+	list.classList.remove(LIST_CLASS, COMPACT_LIST_CLASS);
 	list.style.removeProperty(MARKER_WIDTH_PROPERTY);
 	list.querySelectorAll<HTMLLIElement>(`:scope > li.${ITEM_CLASS}`)
 		.forEach((item) => {
@@ -97,7 +104,10 @@ function getInlineRoot(item: HTMLLIElement): HTMLElement {
 		: item;
 }
 
-function stripLeadingDirective(item: HTMLLIElement): void {
+function stripLeadingDirective(
+	item: HTMLLIElement,
+	directive: LeadingDirective,
+): void {
 	const inlineRoot = getInlineRoot(item);
 	const nodes = Array.from(inlineRoot.childNodes);
 	let inDirective = false;
@@ -122,7 +132,11 @@ function stripLeadingDirective(item: HTMLLIElement): void {
 				node.remove();
 				continue;
 			}
-			const remainder = text.slice(closing + 1).replace(/^\s+/u, '');
+			let remainder = text.slice(closing + 1);
+			if (directive.compact && remainder.startsWith('-')) {
+				remainder = remainder.slice(1);
+			}
+			remainder = remainder.replace(/^\s+/u, '');
 			if (remainder) {
 				node.textContent = remainder;
 			} else {

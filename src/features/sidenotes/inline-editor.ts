@@ -2,7 +2,6 @@ import { Prec, StateEffect } from '@codemirror/state';
 import {
 	EditorView,
 	keymap,
-	type ViewUpdate,
 } from '@codemirror/view';
 import {
 	type App,
@@ -62,7 +61,6 @@ interface NativeMarkdownEditor {
 interface NativeMarkdownEditMode {
 	_loaded?: boolean;
 	editor: NativeMarkdownEditor;
-	onUpdate(update: ViewUpdate, changed: boolean): void;
 	set(data: string, clear: boolean): void;
 	unload(): void;
 }
@@ -198,6 +196,19 @@ export function openInlineMarkdownEditor(
 	};
 	view.dispatch({
 		effects: StateEffect.appendConfig.of([
+			EditorView.lineWrapping,
+			EditorView.updateListener.of((update) => {
+				if (!update.docChanged || closed) {
+					return;
+				}
+				const value = update.state.doc.toString();
+				if (update.view.composing) {
+					pendingCompositionText = value;
+				} else {
+					pendingCompositionText = null;
+					options.onChange(value);
+				}
+			}),
 			createSidenoteEditorTheme(options.parent),
 			Prec.highest(keymap.of([
 				{
@@ -219,20 +230,6 @@ export function openInlineMarkdownEditor(
 			])),
 		]),
 	});
-
-	const originalOnUpdate = editMode.onUpdate.bind(editMode);
-	editMode.onUpdate = (update, changed): void => {
-		originalOnUpdate(update, changed);
-		if (changed) {
-			const value = view.state.doc.toString();
-			if (view.composing) {
-				pendingCompositionText = value;
-			} else {
-				pendingCompositionText = null;
-				options.onChange(value);
-			}
-		}
-	};
 
 	ensureContentEditable(view);
 	contentEditableObserver.observe(view.contentDOM, {
@@ -321,7 +318,6 @@ export function openInlineMarkdownEditor(
 			] as const) {
 				view.dom.removeEventListener(eventName, stopOuterPropagation);
 			}
-			editMode.onUpdate = () => undefined;
 			const activeBeforeUnload = options.app.workspace.activeEditor;
 			const activeBeforeUnloadWasInline = isInlineEditorActive(
 				activeBeforeUnload,
@@ -555,7 +551,12 @@ function createSidenoteEditorTheme(parent: HTMLElement) {
 			fontSize,
 			fontStyle,
 			fontWeight,
+			height: 'auto',
 			lineHeight,
+			maxHeight: 'none',
+			maxWidth: '100%',
+			minWidth: '0',
+			width: '100%',
 		},
 		'.cm-scroller': {
 			backgroundColor: 'transparent',
@@ -563,7 +564,13 @@ function createSidenoteEditorTheme(parent: HTMLElement) {
 			fontSize,
 			fontStyle,
 			fontWeight,
+			height: 'auto',
 			lineHeight,
+			maxHeight: 'none',
+			maxWidth: '100%',
+			minWidth: '0',
+			overflow: 'visible',
+			width: '100%',
 		},
 		'.cm-content': {
 			backgroundColor: 'transparent',
@@ -572,6 +579,9 @@ function createSidenoteEditorTheme(parent: HTMLElement) {
 			fontStyle,
 			fontWeight,
 			lineHeight,
+			maxWidth: '100%',
+			minWidth: '0',
+			width: '100%',
 		},
 		'.cm-line': {
 			backgroundColor: 'transparent',
@@ -580,6 +590,9 @@ function createSidenoteEditorTheme(parent: HTMLElement) {
 			fontStyle,
 			fontWeight,
 			lineHeight,
+			overflowWrap: 'anywhere',
+			whiteSpace: 'pre-wrap',
+			wordBreak: 'break-word',
 		},
 		'.cm-activeLine': {
 			backgroundColor: 'transparent',

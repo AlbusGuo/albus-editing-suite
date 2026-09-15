@@ -11,10 +11,10 @@ export function renderFeatureSettings(
 ): void {
 	const syntaxGroup = new SettingGroup(contentEl);
 
-	syntaxGroup.addSetting((setting) => {
+		syntaxGroup.addSetting((setting) => {
 		setting
 			.setName('彩色文本')
-			.setDesc('启用 **圆形 emoji 文本** 彩色文本和对应命令')
+			.setDesc('启用 **圆形 emoji 文本** 彩色文本、色块交互和对应命令')
 			.addToggle((toggle) => toggle
 				.setValue(plugin.settings.features.coloredText)
 				.onChange((value) => {
@@ -42,11 +42,25 @@ export function renderFeatureSettings(
 	syntaxGroup.addSetting((setting) => {
 		setting
 			.setName('彩色高亮')
-			.setDesc('启用圆形 emoji 彩色高亮和对应命令')
+			.setDesc('启用圆形 emoji 彩色高亮、官方色块交互和对应命令')
 			.addToggle((toggle) => toggle
 				.setValue(plugin.settings.features.colorHighlights)
 				.onChange((value) => {
 					plugin.settings.features.colorHighlights = value;
+					void plugin.saveSettings().then(() => {
+						plugin.refreshFeatures();
+					});
+				}));
+	});
+
+	syntaxGroup.addSetting((setting) => {
+		setting
+			.setName('显示高亮波浪线')
+			.setDesc('在彩色高亮下方显示波浪线')
+			.addToggle((toggle) => toggle
+				.setValue(plugin.settings.colorHighlightWave)
+				.onChange((value) => {
+					plugin.settings.colorHighlightWave = value;
 					void plugin.saveSettings().then(() => {
 						plugin.refreshFeatures();
 					});

@@ -13,11 +13,12 @@ import {
 import type { Plugin } from 'obsidian';
 import {
 	EDITOR_WIDTH_STEP,
+	OBSIDIAN_DEFAULT_EDITOR_WIDTH,
 	normalizeEditorWidth,
 } from '../../settings';
 import { getAppDocuments } from '../../utils/app-documents';
 import type { FeatureController } from '../controller';
-import { createCalloutListSpacingExtension } from './callout-list-spacing';
+import { createBlockIdCollapseExtension } from './block-id-collapse';
 import { createHeadingMarkerCollapseExtension } from './heading-marker-collapse';
 import { markStandaloneImages } from './image-alignment';
 import { createOrderedListAlignmentExtension } from './ordered-list-alignment';
@@ -48,19 +49,25 @@ const READING_QUOTE_PADDING = new WeakMap<Document, number>();
 
 export function registerEditorBasics(
 	plugin: Plugin,
-	getWidth: () => number,
+	getWidth: () => number | null,
 	getSeamlessTypography: () => boolean,
 	onWidthChange: (width: number) => void,
 	getCustomListsEnabled: () => boolean,
 	getCollapseHeadingMarkers: () => boolean,
+	getCollapseBlockIds: () => boolean,
 ): FeatureController {
 	const registeredDocuments = new WeakSet<Document>();
 	let wheelDelta = 0;
 	let lastWheelTime = 0;
 
 	const applyWidth = (): void => {
-		const width = normalizeEditorWidth(getWidth());
 		for (const document of getAppDocuments(plugin.app)) {
+			const configuredWidth = getWidth();
+			if (configuredWidth === null) {
+				document.body.style.removeProperty(FILE_LINE_WIDTH_PROPERTY);
+				continue;
+			}
+			const width = normalizeEditorWidth(configuredWidth);
 			document.body.style.setProperty(
 				FILE_LINE_WIDTH_PROPERTY,
 				`${width}px`,
@@ -129,10 +136,11 @@ export function registerEditorBasics(
 				return;
 			}
 			wheelDelta -= steps * WHEEL_THRESHOLD;
+			const currentWidth = getWidth() ?? OBSIDIAN_DEFAULT_EDITOR_WIDTH;
 			const nextWidth = normalizeEditorWidth(
-				getWidth() + steps * EDITOR_WIDTH_STEP,
+				currentWidth + steps * EDITOR_WIDTH_STEP,
 			);
-			if (nextWidth !== getWidth()) {
+			if (nextWidth !== currentWidth || getWidth() === null) {
 				onWidthChange(nextWidth);
 			}
 		}, { capture: true, passive: false });
@@ -156,10 +164,10 @@ export function registerEditorBasics(
 		),
 	);
 	plugin.registerEditorExtension(
-		createCalloutListSpacingExtension(getSeamlessTypography),
+		createHeadingMarkerCollapseExtension(getCollapseHeadingMarkers),
 	);
 	plugin.registerEditorExtension(
-		createHeadingMarkerCollapseExtension(getCollapseHeadingMarkers),
+		createBlockIdCollapseExtension(getCollapseBlockIds),
 	);
 	plugin.registerMarkdownPostProcessor((element) => {
 		markStandaloneImages(element);

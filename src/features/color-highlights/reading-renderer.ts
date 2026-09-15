@@ -1,5 +1,6 @@
 import type { App } from 'obsidian';
 import { getAppDocuments } from '../../utils/app-documents';
+import { isSuiteColor, type SuiteColor } from '../../utils/color-markers';
 import {
 	DEFAULT_HIGHLIGHT_COLOR,
 	HIGHLIGHT_COLORS,
@@ -54,7 +55,12 @@ export class ReadingHighlightRenderer {
 	) {}
 
 	apply(rootElement: ParentNode): void {
-		const marks = rootElement.querySelectorAll<HTMLElement>('mark');
+		const marks = Array.from(
+			rootElement.querySelectorAll<HTMLElement>('mark'),
+		);
+		if (rootElement.nodeType === 1 && (rootElement as Element).matches('mark')) {
+			marks.unshift(rootElement as HTMLElement);
+		}
 
 		marks.forEach((markElement) => {
 			removeColorClasses(markElement);
@@ -64,6 +70,12 @@ export class ReadingHighlightRenderer {
 				return;
 			}
 			if (markElement.classList.contains(CLOZE_CLASS)) {
+				clearStoredText(markElement);
+				return;
+			}
+			const nativeColor = getNativeHighlightColor(markElement);
+			if (nativeColor) {
+				markElement.classList.add(`${COLOR_CLASS_PREFIX}${nativeColor}`);
 				clearStoredText(markElement);
 				return;
 			}
@@ -129,4 +141,9 @@ export class ReadingHighlightRenderer {
 			});
 		}
 	}
+}
+
+function getNativeHighlightColor(element: HTMLElement): SuiteColor | null {
+	const color = element.dataset.highlight ?? '';
+	return isSuiteColor(color) ? color : null;
 }

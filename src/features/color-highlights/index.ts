@@ -6,16 +6,22 @@ import { createColorHighlightExtension } from './editor-extension';
 import { ReadingHighlightRenderer } from './reading-renderer';
 
 const ENABLED_BODY_CLASS = 'editing-suite-color-highlights-enabled';
+const WAVE_BODY_CLASS = 'editing-suite-color-highlight-wave-enabled';
 
 export function registerColorHighlights(
 	plugin: Plugin,
 	isEnabled: () => boolean,
+	isWaveEnabled: () => boolean,
 ): FeatureController {
 	const readingRenderer = new ReadingHighlightRenderer(plugin.app, isEnabled);
 	let isActive = true;
 	const applyEnabledState = (): void => {
 		for (const document of getAppDocuments(plugin.app)) {
 			document.body.classList.toggle(ENABLED_BODY_CLASS, isEnabled());
+			document.body.classList.toggle(
+				WAVE_BODY_CLASS,
+				isEnabled() && isWaveEnabled(),
+			);
 		}
 	};
 
@@ -41,6 +47,7 @@ export function registerColorHighlights(
 		readingRenderer.clearAll();
 		for (const document of getAppDocuments(plugin.app)) {
 			document.body.classList.remove(ENABLED_BODY_CLASS);
+			document.body.classList.remove(WAVE_BODY_CLASS);
 		}
 	});
 	applyEnabledState();

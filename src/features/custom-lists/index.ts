@@ -3,6 +3,7 @@ import type { ListMarkerColor } from '../../settings';
 import { getAppDocuments } from '../../utils/app-documents';
 import type { FeatureController } from '../controller';
 import { createCustomListEditorExtension } from './editor-extension';
+import { createCompactListSpacingExtension } from './compact-spacing';
 import { renderCustomLists } from './reading-renderer';
 
 const ENABLED_BODY_CLASS = 'editing-suite-custom-lists-enabled';
@@ -31,6 +32,9 @@ export function registerCustomLists(
 	};
 
 	plugin.registerEditorExtension(createCustomListEditorExtension(isEnabled));
+	plugin.registerEditorExtension(
+		createCompactListSpacingExtension(isEnabled),
+	);
 	plugin.registerMarkdownPostProcessor((element) => {
 		if (isEnabled()) {
 			renderCustomLists(element);

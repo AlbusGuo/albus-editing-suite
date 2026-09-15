@@ -5,8 +5,6 @@ import type { FeatureController } from '../controller';
 const ENABLED_BODY_CLASS = 'editing-suite-inline-code-enabled';
 const COPIED_CLASS = 'editing-suite-inline-code-copied';
 const READING_CODE_SELECTOR = '.markdown-preview-view :not(pre) > code';
-const EDITOR_CODE_SELECTOR =
-	'.markdown-source-view.mod-cm6 .cm-inline-code:not(.cm-formatting)';
 const FEEDBACK_DURATION = 1000;
 
 interface FeedbackTimer {
@@ -82,29 +80,8 @@ export function registerInlineCode(
 		}
 	};
 
-	const handlePointerDown = (
-		event: PointerEvent,
-		document: Document,
-	): void => {
-		if (!isEnabled() || event.button !== 0 || !event.isPrimary) {
-			return;
-		}
-		const element = findTarget(event, document, EDITOR_CODE_SELECTOR);
-		if (!element) {
-			return;
-		}
-		event.preventDefault();
-		event.stopPropagation();
-		void copyElement(element);
-	};
-
 	const handleClick = (event: MouseEvent, document: Document): void => {
 		if (!isEnabled() || event.button !== 0) {
-			return;
-		}
-		if (findTarget(event, document, EDITOR_CODE_SELECTOR)) {
-			event.preventDefault();
-			event.stopPropagation();
 			return;
 		}
 		const element = findTarget(event, document, READING_CODE_SELECTOR);
@@ -123,9 +100,6 @@ export function registerInlineCode(
 			return;
 		}
 		registeredDocuments.add(document);
-		plugin.registerDomEvent(document, 'pointerdown', (event) => {
-			handlePointerDown(event, document);
-		}, { capture: true });
 		plugin.registerDomEvent(document, 'click', (event) => {
 			handleClick(event, document);
 		}, { capture: true });

@@ -6,6 +6,7 @@ import {
 	ViewPlugin,
 	type ViewUpdate,
 } from '@codemirror/view';
+import { requireApiVersion } from 'obsidian';
 import {
 	computeFencedCodeLines,
 	getVisibleDocumentLines,
@@ -31,6 +32,7 @@ const COLOR_DECORATIONS = Object.fromEntries(
 ) as Record<HighlightColor, Decoration>;
 
 const HIDE_EMOJI = Decoration.replace({});
+const HAS_NATIVE_COLOR_HIGHLIGHTS = requireApiVersion('1.14.0');
 
 function buildDecorations(
 	view: EditorView,
@@ -91,6 +93,7 @@ function buildDecorations(
 			);
 
 			if (
+				!HAS_NATIVE_COLOR_HIGHLIGHTS &&
 				!showEmojiPrefix &&
 				!keepVisibleInCode &&
 				!cursorInside &&

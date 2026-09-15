@@ -6,6 +6,14 @@ import {
 } from '../../utils/color-markers';
 
 export const COLORED_TEXT_COLORS = {
+	red: {
+		emoji: TEXT_COLOR_EMOJIS.red,
+		label: COLOR_LABELS.red,
+	},
+	orange: {
+		emoji: TEXT_COLOR_EMOJIS.orange,
+		label: COLOR_LABELS.orange,
+	},
 	yellow: {
 		emoji: TEXT_COLOR_EMOJIS.yellow,
 		label: COLOR_LABELS.yellow,
@@ -14,17 +22,13 @@ export const COLORED_TEXT_COLORS = {
 		emoji: TEXT_COLOR_EMOJIS.green,
 		label: COLOR_LABELS.green,
 	},
-	red: {
-		emoji: TEXT_COLOR_EMOJIS.red,
-		label: COLOR_LABELS.red,
+	blue: {
+		emoji: TEXT_COLOR_EMOJIS.blue,
+		label: COLOR_LABELS.blue,
 	},
 	purple: {
 		emoji: TEXT_COLOR_EMOJIS.purple,
 		label: COLOR_LABELS.purple,
-	},
-	blue: {
-		emoji: TEXT_COLOR_EMOJIS.blue,
-		label: COLOR_LABELS.blue,
 	},
 } as const;
 

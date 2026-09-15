@@ -1,9 +1,10 @@
-import { SettingGroup } from 'obsidian';
+import { SettingGroup, type SliderComponent } from 'obsidian';
 import type EditingSuitePlugin from '../../main';
 import {
 	DISPLAY_MATH_MARGIN_MAX,
 	DISPLAY_MATH_MARGIN_MIN,
 	DISPLAY_MATH_MARGIN_STEP,
+	OBSIDIAN_DEFAULT_DISPLAY_MATH_MARGIN,
 } from '../../settings';
 
 export function renderMathSettings(
@@ -24,19 +25,32 @@ export function renderMathSettings(
 	});
 
 	group.addSetting((setting) => {
+		let sliderControl: SliderComponent | null = null;
 		setting
 			.setName('行间公式边距')
 			.setDesc('调整行间公式的上下边距')
-			.addSlider((slider) => slider
-				.setLimits(
+			.addExtraButton((button) => button
+				.setIcon('reset')
+				.setTooltip('恢复 Obsidian 默认边距')
+				.onClick(() => {
+					plugin.resetMathDisplayMargin();
+					sliderControl?.setValue(
+						OBSIDIAN_DEFAULT_DISPLAY_MATH_MARGIN,
+					);
+				}))
+			.addSlider((slider) => {
+				sliderControl = slider;
+				slider
+					.setLimits(
 					DISPLAY_MATH_MARGIN_MIN,
 					DISPLAY_MATH_MARGIN_MAX,
 					DISPLAY_MATH_MARGIN_STEP,
-				)
-				.setValue(plugin.settings.mathDisplayMargin)
-				.setDynamicTooltip()
-				.onChange((value) => {
-					plugin.setMathDisplayMargin(value);
-				}));
+					)
+					.setValue(plugin.settings.mathDisplayMargin)
+					.setDynamicTooltip()
+					.onChange((value) => {
+						plugin.setMathDisplayMargin(value);
+					});
+			});
 	});
 }

@@ -5,7 +5,9 @@ import {
 	type EditorView,
 	ViewPlugin,
 	type ViewUpdate,
+	WidgetType,
 } from '@codemirror/view';
+import { Menu, type MenuItem } from 'obsidian';
 import {
 	computeFencedCodeLines,
 	getVisibleDocumentLines,
@@ -15,6 +17,7 @@ import {
 } from '../../utils/editor-context';
 import { hasValidInlineMarkBoundaries } from '../../utils/inline-mark';
 import {
+	COLORED_TEXT_COLORS,
 	COLORED_TEXT_COLOR_KEYS,
 	type ColoredTextColor,
 } from './constants';
@@ -34,6 +37,143 @@ const COLOR_DECORATIONS = Object.fromEntries(
 ) as Record<ColoredTextColor, Decoration>;
 
 const HIDE_EMOJI = Decoration.replace({});
+
+class ColoredTextColorWidget extends WidgetType {
+	constructor(
+		private readonly color: ColoredTextColor,
+		private readonly from: number,
+		private readonly to: number,
+	) {
+		super();
+	}
+
+	eq(other: ColoredTextColorWidget): boolean {
+		return (
+			this.color === other.color &&
+			this.from === other.from &&
+			this.to === other.to
+		);
+	}
+
+	toDOM(view: EditorView): HTMLElement {
+		const element = view.dom.ownerDocument.createElement('span');
+		element.className =
+			'cm-highlight-color-widget editing-suite-colored-text-color-widget';
+		element.dataset.highlight = this.color;
+		element.setAttribute('role', 'button');
+		element.setAttribute(
+			'aria-label',
+			`更改彩色文本颜色, 当前为${COLORED_TEXT_COLORS[this.color].label}`,
+		);
+		element.tabIndex = 0;
+		const swatch = view.dom.ownerDocument.createElement('img');
+		swatch.className = 'highlight-swatch';
+		swatch.src =
+			'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>';
+		swatch.draggable = false;
+		swatch.dataset.highlight = this.color;
+		element.append(swatch, view.dom.ownerDocument.createTextNode('\u200B'));
+		element.addEventListener('mousedown', (event) => {
+			if (!hasModifier(event)) {
+				event.preventDefault();
+			}
+		});
+		element.addEventListener('click', (event) => {
+			if (hasModifier(event) || !view.state.selection.main.empty) {
+				return;
+			}
+			event.preventDefault();
+			event.stopPropagation();
+			this.openMenu(view, element, event);
+		});
+		element.addEventListener('keydown', (event) => {
+			if (event.key !== 'Enter' && event.key !== ' ') {
+				return;
+			}
+			event.preventDefault();
+			event.stopPropagation();
+			this.openMenu(view, element);
+		});
+		return element;
+	}
+
+	ignoreEvent(): boolean {
+		return false;
+	}
+
+	private openMenu(
+		view: EditorView,
+		element: HTMLElement,
+		event?: MouseEvent,
+	): void {
+		const menu = new Menu();
+		menu.addItem((item) => item
+			.setTitle('默认')
+			.setIcon('lucide-highlighter')
+			.onClick(() => this.setColor(view, null)));
+		for (const color of COLORED_TEXT_COLOR_KEYS) {
+			const definition = COLORED_TEXT_COLORS[color];
+			menu.addItem((item) => {
+				setColorMenuIcon(item, color);
+				item
+					.setTitle(definition.label)
+					.setChecked(color === this.color)
+					.onClick(() => this.setColor(view, color));
+			});
+		}
+		if (event) {
+			menu.showAtMouseEvent(event);
+			return;
+		}
+		const rect = element.getBoundingClientRect();
+		menu.showAtPosition(
+			{ x: rect.left, y: rect.bottom },
+			element.ownerDocument,
+		);
+	}
+
+	private setColor(
+		view: EditorView,
+		color: ColoredTextColor | null,
+	): void {
+		if (this.from < 0 || this.to > view.state.doc.length) {
+			return;
+		}
+		view.dispatch({
+			changes: {
+				from: this.from,
+				to: this.to,
+				insert: color ? COLORED_TEXT_COLORS[color].emoji : '',
+			},
+			userEvent: 'input.type',
+		});
+		view.focus();
+	}
+}
+
+function hasModifier(event: MouseEvent): boolean {
+	return event.altKey || event.ctrlKey || event.metaKey || event.shiftKey;
+}
+
+interface MenuItemWithIconElement {
+	iconEl?: HTMLElement;
+}
+
+function setColorMenuIcon(
+	item: MenuItem,
+	color: ColoredTextColor,
+): void {
+	const iconElement = (item as unknown as MenuItemWithIconElement).iconEl;
+	if (!iconElement) {
+		item.setIcon('circle');
+		return;
+	}
+	iconElement.empty();
+	const swatch = iconElement.createDiv({
+		cls: 'highlight-swatch editing-suite-color-menu-swatch',
+	});
+	swatch.dataset.highlight = color;
+}
 
 function buildDecorations(
 	view: EditorView,
@@ -87,10 +227,21 @@ function buildDecorations(
 			);
 			if (
 				!showEmojiPrefix &&
-				!cursorInside &&
 				emojiFrom < emojiTo
 			) {
-				decorations.push(HIDE_EMOJI.range(emojiFrom, emojiTo));
+				if (cursorInside) {
+					decorations.push(
+						Decoration.replace({
+							widget: new ColoredTextColorWidget(
+								prefix.color,
+								emojiFrom,
+								emojiTo,
+							),
+						}).range(emojiFrom, emojiTo),
+					);
+				} else {
+					decorations.push(HIDE_EMOJI.range(emojiFrom, emojiTo));
+				}
 			}
 		}
 	}

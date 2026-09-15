@@ -20,21 +20,27 @@ export const EDITOR_WIDTH_MIN = 400;
 export const EDITOR_WIDTH_MAX = 1400;
 export const EDITOR_WIDTH_STEP = 10;
 export const DEFAULT_EDITOR_WIDTH = 800;
+export const OBSIDIAN_DEFAULT_EDITOR_WIDTH = 700;
 export const DISPLAY_MATH_MARGIN_MIN = 0;
 export const DISPLAY_MATH_MARGIN_MAX = 2;
 export const DISPLAY_MATH_MARGIN_STEP = 0.1;
 export const DEFAULT_DISPLAY_MATH_MARGIN = 0.5;
+export const OBSIDIAN_DEFAULT_DISPLAY_MATH_MARGIN = 1;
 
 export interface EditingSuiteSettings {
+	collapseBlockIds: boolean;
 	collapseHeadingMarkers: boolean;
+	colorHighlightWave: boolean;
 	coloredTextBold: boolean;
 	dividerStyle: DividerStyle;
 	editorWidth: number;
+	editorWidthUsesDefault: boolean;
 	focusIndicator: boolean;
 	features: FeatureSettings;
 	linkStyle: LinkStyle;
 	listMarkerColor: ListMarkerColor;
 	mathDisplayMargin: number;
+	mathDisplayMarginUsesDefault: boolean;
 	mathOverflowScroll: boolean;
 	seamlessTypography: boolean;
 	settingsTab: SettingsTab;
@@ -45,10 +51,13 @@ export interface EditingSuiteSettings {
 }
 
 const DEFAULT_SETTINGS: EditingSuiteSettings = {
+	collapseBlockIds: false,
 	collapseHeadingMarkers: false,
+	colorHighlightWave: true,
 	coloredTextBold: false,
 	dividerStyle: 'default',
 	editorWidth: DEFAULT_EDITOR_WIDTH,
+	editorWidthUsesDefault: false,
 	focusIndicator: true,
 	features: {
 		cloze: true,
@@ -63,6 +72,7 @@ const DEFAULT_SETTINGS: EditingSuiteSettings = {
 	linkStyle: 'default',
 	listMarkerColor: 'default',
 	mathDisplayMargin: DEFAULT_DISPLAY_MATH_MARGIN,
+	mathDisplayMarginUsesDefault: false,
 	mathOverflowScroll: true,
 	seamlessTypography: true,
 	settingsTab: 'editor',
@@ -79,9 +89,17 @@ export function normalizeSettings(
 	const features = isRecord(source.features) ? source.features : {};
 
 	return {
+		collapseBlockIds: readBoolean(
+			source.collapseBlockIds,
+			DEFAULT_SETTINGS.collapseBlockIds,
+		),
 		collapseHeadingMarkers: readBoolean(
 			source.collapseHeadingMarkers,
 			DEFAULT_SETTINGS.collapseHeadingMarkers,
+		),
+		colorHighlightWave: readBoolean(
+			source.colorHighlightWave,
+			DEFAULT_SETTINGS.colorHighlightWave,
 		),
 		coloredTextBold: readBoolean(
 			source.coloredTextBold,
@@ -91,6 +109,10 @@ export function normalizeSettings(
 			? 'diamond-gradient'
 			: 'default',
 		editorWidth: normalizeEditorWidth(source.editorWidth),
+		editorWidthUsesDefault: readBoolean(
+			source.editorWidthUsesDefault,
+			DEFAULT_SETTINGS.editorWidthUsesDefault,
+		),
 		focusIndicator: readBoolean(
 			source.focusIndicator,
 			DEFAULT_SETTINGS.focusIndicator,
@@ -137,6 +159,10 @@ export function normalizeSettings(
 			: 'default',
 		mathDisplayMargin: normalizeDisplayMathMargin(
 			source.mathDisplayMargin,
+		),
+		mathDisplayMarginUsesDefault: readBoolean(
+			source.mathDisplayMarginUsesDefault,
+			DEFAULT_SETTINGS.mathDisplayMarginUsesDefault,
 		),
 		mathOverflowScroll: readBoolean(
 			source.mathOverflowScroll,
