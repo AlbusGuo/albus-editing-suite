@@ -52,6 +52,8 @@ interface WidgetCleanup {
 }
 
 const widgetCleanups = new WeakMap<HTMLElement, WidgetCleanup>();
+const FOCUS_INDICATOR_SUPPRESSION_CLASS =
+	'editing-suite-focus-indicator-suppressed';
 
 export class SidenoteEditCoordinator {
 	private activeClose: ((commit: boolean) => void) | null = null;
@@ -398,6 +400,9 @@ export class SidenoteMarginWidget extends WidgetType {
 		cleanup.renderChild?.unload();
 		cleanup.renderChild = null;
 		margin.dataset.editing = 'true';
+		margin.ownerDocument.body.classList.add(
+			FOCUS_INDICATOR_SUPPRESSION_CLASS,
+		);
 		content.replaceChildren();
 		const markdownView = this.host.getMarkdownView(view);
 		const originalText = cleanup.item.content;
@@ -418,6 +423,7 @@ export class SidenoteMarginWidget extends WidgetType {
 				cleanup.closeEditor = null;
 				this.host.coordinator.finish(close);
 				margin.dataset.editing = 'false';
+				releaseFocusIndicatorSuppression(margin.ownerDocument);
 				const draft = result.committed
 					? normalizeDraft(result.text)
 					: originalText;
@@ -473,6 +479,20 @@ export class SidenoteMarginWidget extends WidgetType {
 				SIDENOTE_CLOSING
 		);
 	}
+}
+
+function releaseFocusIndicatorSuppression(document: Document): void {
+	document.defaultView?.queueMicrotask(() => {
+		if (
+			document.querySelector(
+				'.editing-suite-sidenote-margin[data-editing="true"]',
+			) === null
+		) {
+			document.body.classList.remove(
+				FOCUS_INDICATOR_SUPPRESSION_CLASS,
+			);
+		}
+	});
 }
 
 function isPersistableDraft(text: string): boolean {
