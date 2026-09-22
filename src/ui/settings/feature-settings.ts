@@ -9,9 +9,10 @@ export function renderFeatureSettings(
 	contentEl: HTMLElement,
 	plugin: EditingSuitePlugin,
 ): void {
-	const syntaxGroup = new SettingGroup(contentEl);
+	const coloredTextGroup = new SettingGroup(contentEl)
+		.setHeading('彩色文本');
 
-		syntaxGroup.addSetting((setting) => {
+	coloredTextGroup.addSetting((setting) => {
 		setting
 			.setName('彩色文本')
 			.setDesc('启用 **圆形 emoji 文本** 彩色文本、色块交互和对应命令')
@@ -25,7 +26,7 @@ export function renderFeatureSettings(
 				}));
 	});
 
-	syntaxGroup.addSetting((setting) => {
+	coloredTextGroup.addSetting((setting) => {
 		setting
 			.setName('保留粗体')
 			.setDesc('彩色文本继续使用粗体字重')
@@ -39,7 +40,10 @@ export function renderFeatureSettings(
 				}));
 	});
 
-	syntaxGroup.addSetting((setting) => {
+	const highlightGroup = new SettingGroup(contentEl)
+		.setHeading('彩色高亮与挖空');
+
+	highlightGroup.addSetting((setting) => {
 		setting
 			.setName('彩色高亮')
 			.setDesc('启用圆形 emoji 彩色高亮、官方色块交互和对应命令')
@@ -53,7 +57,7 @@ export function renderFeatureSettings(
 				}));
 	});
 
-	syntaxGroup.addSetting((setting) => {
+	highlightGroup.addSetting((setting) => {
 		setting
 			.setName('显示高亮波浪线')
 			.setDesc('在彩色高亮下方显示波浪线')
@@ -67,7 +71,7 @@ export function renderFeatureSettings(
 				}));
 	});
 
-	syntaxGroup.addSetting((setting) => {
+	highlightGroup.addSetting((setting) => {
 		setting
 			.setName('挖空')
 			.setDesc('启用 ==⚫文本== 挖空语法和对应命令')
@@ -81,7 +85,10 @@ export function renderFeatureSettings(
 				}));
 	});
 
-	syntaxGroup.addSetting((setting) => {
+	const negativeHeadingGroup = new SettingGroup(contentEl)
+		.setHeading('负标题');
+
+	negativeHeadingGroup.addSetting((setting) => {
 		setting
 			.setName('负标题')
 			.setDesc('启用 -# 负标题语法')
