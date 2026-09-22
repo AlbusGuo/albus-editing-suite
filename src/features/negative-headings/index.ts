@@ -1,6 +1,5 @@
 import { MarkdownView, type Plugin } from 'obsidian';
 import type { FeatureController } from '../controller';
-import { registerNegativeHeadingCommands } from './commands';
 import { createNegativeHeadingEditorExtension } from './editor-extension';
 import { renderNegativeHeadings } from './reading-renderer';
 
@@ -8,7 +7,6 @@ export function registerNegativeHeadings(
 	plugin: Plugin,
 	isEnabled: () => boolean,
 ): FeatureController {
-	registerNegativeHeadingCommands(plugin, isEnabled);
 	plugin.registerEditorExtension(
 		createNegativeHeadingEditorExtension(isEnabled),
 	);

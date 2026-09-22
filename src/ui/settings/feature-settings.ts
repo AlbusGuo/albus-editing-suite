@@ -84,7 +84,7 @@ export function renderFeatureSettings(
 	syntaxGroup.addSetting((setting) => {
 		setting
 			.setName('负标题')
-			.setDesc('启用 -# 负标题语法和智能切换命令')
+			.setDesc('启用 -# 负标题语法')
 			.addToggle((toggle) => toggle
 				.setValue(plugin.settings.features.negativeHeadings)
 				.onChange((value) => {

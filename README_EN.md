@@ -124,8 +124,6 @@ Use Discord-style `-# ` syntax for compact, muted headings:
 \-# Escaped as ordinary text
 ```
 
-The `Smart toggle negative heading` command supports single lines, multi-line selections, lists, and quotes while skipping code blocks, math blocks, and Frontmatter.
-
 ### Sidenotes
 
 Use the following syntax to place a note beside the main text:
