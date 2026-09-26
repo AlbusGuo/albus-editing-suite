@@ -197,7 +197,7 @@ npm run lint
 npm run build
 ```
 
-生产构建会在项目根目录生成 `main.js`.
+生产构建会在 `dist/` 生成 `main.js`、`manifest.json` 和 `styles.css`.
 
 ## 兼容性与隐私
 

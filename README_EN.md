@@ -197,7 +197,7 @@ npm run lint
 npm run build
 ```
 
-The production bundle is generated as `main.js` in the project root.
+The production build generates `main.js`, `manifest.json`, and `styles.css` in `dist/`.
 
 ## Compatibility and privacy
 
