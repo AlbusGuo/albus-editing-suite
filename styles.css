@@ -2271,9 +2271,10 @@ body.editing-suite-code-blocks-enabled
 }
 
 body.editing-suite-cloze-enabled .editing-suite-reading-cloze {
-	display: inline-grid;
+	display: inline-block;
 	position: relative;
 	vertical-align: baseline;
+	line-height: inherit;
 	background: none;
 	color: inherit;
 	text-decoration: none;
@@ -2282,7 +2283,7 @@ body.editing-suite-cloze-enabled .editing-suite-reading-cloze {
 }
 
 body.editing-suite-cloze-enabled .editing-suite-reading-cloze-answer {
-	grid-area: 1 / 1;
+	display: inline-block;
 	min-width: 1em;
 	visibility: hidden;
 }
@@ -2298,6 +2299,9 @@ body.editing-suite-cloze-enabled .cm-s-obsidian
 	--text-highlight-bg: transparent;
 
 	position: relative;
+	display: inline-block;
+	vertical-align: baseline;
+	line-height: inherit;
 	background: none;
 	background-color: transparent;
 	background-image: none;
@@ -2329,33 +2333,39 @@ body.editing-suite-cloze-enabled .cm-s-obsidian
 	opacity: 1;
 }
 
-body.editing-suite-cloze-enabled .cm-s-obsidian
-	.editing-suite-editor-cloze::after {
+body.editing-suite-cloze-enabled
+	:is(
+		.editing-suite-reading-cloze,
+		.cm-s-obsidian .editing-suite-editor-cloze,
+		.cm-s-obsidian .editing-suite-editor-cloze-math
+	)::after {
 	content: '';
 	position: absolute;
-	right: 0;
+	inset-inline: 0;
 	bottom: 0.08em;
-	left: 0;
-	height: 1px;
+	height: var(--editing-suite-cloze-line-thickness, 1px);
 	background-color: var(--text-normal);
 	pointer-events: none;
 }
 
-body.editing-suite-cloze-enabled .editing-suite-cloze-line {
-	position: absolute;
-	right: 0;
-	bottom: 0.08em;
-	left: 0;
-	width: 100%;
-	height: 1px;
-	overflow: visible;
-	pointer-events: none;
+body.editing-suite-cloze-enabled .cm-s-obsidian
+	.editing-suite-editor-cloze-math {
+	display: inline-block;
+	position: relative;
+	vertical-align: baseline;
+	line-height: inherit;
 }
 
-body.editing-suite-cloze-enabled .editing-suite-cloze-line line {
-	stroke: var(--text-normal);
-	stroke-width: 1;
-	vector-effect: non-scaling-stroke;
+body.editing-suite-cloze-enabled .cm-s-obsidian
+	.editing-suite-editor-cloze-math
+	> * {
+	visibility: hidden;
+}
+
+body.editing-suite-cloze-enabled .cm-s-obsidian
+	.editing-suite-editor-cloze-math.editing-suite-editor-cloze-hovered
+	> * {
+	visibility: visible;
 }
 
 body.editing-suite-cloze-enabled

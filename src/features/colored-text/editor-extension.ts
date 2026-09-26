@@ -107,10 +107,6 @@ class ColoredTextColorWidget extends WidgetType {
 		event?: MouseEvent,
 	): void {
 		const menu = new Menu();
-		menu.addItem((item) => item
-			.setTitle('默认')
-			.setIcon('lucide-highlighter')
-			.onClick(() => this.setColor(view, null)));
 		for (const color of COLORED_TEXT_COLOR_KEYS) {
 			const definition = COLORED_TEXT_COLORS[color];
 			menu.addItem((item) => {
@@ -134,7 +130,7 @@ class ColoredTextColorWidget extends WidgetType {
 
 	private setColor(
 		view: EditorView,
-		color: ColoredTextColor | null,
+		color: ColoredTextColor,
 	): void {
 		if (this.from < 0 || this.to > view.state.doc.length) {
 			return;
@@ -143,7 +139,7 @@ class ColoredTextColorWidget extends WidgetType {
 			changes: {
 				from: this.from,
 				to: this.to,
-				insert: color ? COLORED_TEXT_COLORS[color].emoji : '',
+				insert: COLORED_TEXT_COLORS[color].emoji,
 			},
 			userEvent: 'input.type',
 		});

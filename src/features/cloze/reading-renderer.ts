@@ -1,6 +1,5 @@
 import type { App } from 'obsidian';
 import { getAppDocuments } from '../../utils/app-documents';
-import { createClozeLine } from './line-element';
 import { CLOZE_EMOJI } from './syntax';
 
 const CLOZE_CLASS = 'editing-suite-reading-cloze';
@@ -54,10 +53,7 @@ export class ClozeReadingRenderer {
 			while (element.firstChild) {
 				answerElement.appendChild(element.firstChild);
 			}
-			element.append(
-				answerElement,
-				createClozeLine(element.ownerDocument),
-			);
+			element.append(answerElement);
 			element.classList.add(CLOZE_CLASS);
 			element.setAttribute('role', 'button');
 			element.setAttribute('tabindex', '0');

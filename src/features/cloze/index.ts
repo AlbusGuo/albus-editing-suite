@@ -6,6 +6,7 @@ import { createClozeEditorExtension } from './editor-extension';
 import { ClozeReadingRenderer } from './reading-renderer';
 
 const ENABLED_BODY_CLASS = 'editing-suite-cloze-enabled';
+const LINE_THICKNESS_PROPERTY = '--editing-suite-cloze-line-thickness';
 
 export function registerCloze(
 	plugin: Plugin,
@@ -28,7 +29,20 @@ export function registerCloze(
 	};
 	const applyEnabledState = (): void => {
 		for (const document of getAppDocuments(plugin.app)) {
-			document.body.classList.toggle(ENABLED_BODY_CLASS, isEnabled());
+			const enabled = isEnabled();
+			document.body.classList.toggle(ENABLED_BODY_CLASS, enabled);
+			if (enabled) {
+				const ratio = Math.max(
+					1,
+					document.defaultView?.devicePixelRatio ?? 1,
+				);
+				document.body.style.setProperty(
+					LINE_THICKNESS_PROPERTY,
+					`${Number((1 / ratio).toFixed(6))}px`,
+				);
+			} else {
+				document.body.style.removeProperty(LINE_THICKNESS_PROPERTY);
+			}
 			registerDocument(document);
 		}
 	};
@@ -44,6 +58,7 @@ export function registerCloze(
 			readingRenderer.refreshAll();
 		}),
 	);
+	plugin.registerEvent(plugin.app.workspace.on('resize', applyEnabledState));
 	plugin.app.workspace.onLayoutReady(() => {
 		if (isActive) {
 			applyEnabledState();
@@ -55,6 +70,7 @@ export function registerCloze(
 		readingRenderer.clearAll();
 		for (const document of getAppDocuments(plugin.app)) {
 			document.body.classList.remove(ENABLED_BODY_CLASS);
+			document.body.style.removeProperty(LINE_THICKNESS_PROPERTY);
 		}
 	});
 	applyEnabledState();

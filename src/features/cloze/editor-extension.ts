@@ -1,3 +1,4 @@
+import { syntaxTree } from '@codemirror/language';
 import type { Extension, Range } from '@codemirror/state';
 import {
 	Decoration,
@@ -18,16 +19,33 @@ import { CLOZE_EMOJI, findClozeMatches } from './syntax';
 const HIDE_EMOJI = Decoration.replace({});
 const CLOZE_ID_ATTRIBUTE = 'data-editing-suite-cloze-id';
 const HOVERED_CLASS = 'editing-suite-editor-cloze-hovered';
+const HIDDEN_MATH_CLASS = 'editing-suite-editor-cloze-math';
+
+interface HiddenMathRange {
+	clozeId: string;
+	from: number;
+	to: number;
+}
+
+interface ClozeDecorations {
+	decorations: DecorationSet;
+	hiddenMath: HiddenMathRange[];
+}
 
 class ClozeViewPlugin implements PluginValue {
 	decorations: DecorationSet;
+	private hiddenMath: HiddenMathRange[];
 	private hoveredId: string | null = null;
+	private readonly mathMeasureKey = {};
 
 	constructor(
-		view: EditorView,
+		private readonly view: EditorView,
 		private readonly isEnabled: () => boolean,
 	) {
-		this.decorations = buildDecorations(view, isEnabled);
+		const state = buildDecorations(this.view, isEnabled);
+		this.decorations = state.decorations;
+		this.hiddenMath = state.hiddenMath;
+		this.requestMathSync(this.view);
 	}
 
 	update(update: ViewUpdate): void {
@@ -39,7 +57,10 @@ class ClozeViewPlugin implements PluginValue {
 			update.viewportChanged ||
 			update.selectionSet
 		) {
-			this.decorations = buildDecorations(update.view, this.isEnabled);
+			const state = buildDecorations(update.view, this.isEnabled);
+			this.decorations = state.decorations;
+			this.hiddenMath = state.hiddenMath;
+			this.requestMathSync(update.view);
 		}
 		if (this.hoveredId !== null) {
 			const hoveredId = this.hoveredId;
@@ -81,6 +102,15 @@ class ClozeViewPlugin implements PluginValue {
 
 	destroy(): void {
 		this.hoveredId = null;
+		applyMathElements(collectMathElements(this.view, []));
+	}
+
+	private requestMathSync(view: EditorView): void {
+		view.requestMeasure({
+			key: this.mathMeasureKey,
+			read: () => collectMathElements(view, this.hiddenMath),
+			write: (elements) => applyMathElements(elements),
+		});
 	}
 
 	private applyHoveredState(view: EditorView, id: string | null): void {
@@ -101,12 +131,16 @@ class ClozeViewPlugin implements PluginValue {
 function buildDecorations(
 	view: EditorView,
 	isEnabled: () => boolean,
-): DecorationSet {
+): ClozeDecorations {
 	if (!isEnabled() || isSourceMode(view)) {
-		return Decoration.none;
+		return {
+			decorations: Decoration.none,
+			hiddenMath: [],
+		};
 	}
 
 	const decorations: Range<Decoration>[] = [];
+	const hiddenMath: HiddenMathRange[] = [];
 	const documentText = view.state.doc.toString();
 	const fencedCodeLines = computeFencedCodeLines(documentText);
 	const visitedLines = new Set<number>();
@@ -157,6 +191,12 @@ function buildDecorations(
 								class: 'editing-suite-editor-cloze-answer',
 							}).range(emojiTo, answerTo),
 						);
+						hiddenMath.push(...collectInlineMathRanges(
+							view,
+							emojiTo,
+							answerTo,
+							clozeId,
+						));
 					}
 				}
 			}
@@ -168,7 +208,102 @@ function buildDecorations(
 		}
 	}
 
-	return Decoration.set(decorations, true);
+	return {
+		decorations: Decoration.set(decorations, true),
+		hiddenMath,
+	};
+}
+
+function collectInlineMathRanges(
+	view: EditorView,
+	from: number,
+	to: number,
+	clozeId: string,
+): HiddenMathRange[] {
+	const ranges: HiddenMathRange[] = [];
+	let mathFrom = -1;
+	syntaxTree(view.state).iterate({
+		from,
+		to,
+		enter(node) {
+			const name = node.type.name.toLowerCase();
+			if (
+				mathFrom < 0 &&
+				name.includes('formatting-math-begin') &&
+				!name.includes('math-block')
+			) {
+				mathFrom = node.from;
+				return;
+			}
+			if (mathFrom >= 0 && name.includes('formatting-math-end')) {
+				if (mathFrom >= from && node.to <= to) {
+					ranges.push({ clozeId, from: mathFrom, to: node.to });
+				}
+				mathFrom = -1;
+			}
+		},
+	});
+	return ranges;
+}
+
+interface MathElementState {
+	clozeId: string | null;
+	element: HTMLElement;
+}
+
+function collectMathElements(
+	view: EditorView,
+	ranges: readonly HiddenMathRange[],
+): MathElementState[] {
+	return Array.from(view.dom.querySelectorAll<HTMLElement>(
+		`.math:not(.math-block), .${HIDDEN_MATH_CLASS}`,
+	)).map((element) => ({
+		clozeId: findMathClozeId(view, element, ranges),
+		element,
+	}));
+}
+
+function findMathClozeId(
+	view: EditorView,
+	element: HTMLElement,
+	ranges: readonly HiddenMathRange[],
+): string | null {
+	let positions: number[] = [];
+	try {
+		positions = [
+			view.posAtDOM(element, 0),
+			view.posAtDOM(element, element.childNodes.length),
+		];
+	} catch {
+		const rect = element.getBoundingClientRect();
+		const position = view.posAtCoords({
+			x: rect.left + rect.width / 2,
+			y: rect.top + rect.height / 2,
+		});
+		if (position !== null) {
+			positions = [position];
+		}
+	}
+	for (const range of ranges) {
+		if (positions.some((position) =>
+			position >= range.from && position <= range.to,
+		)) {
+			return range.clozeId;
+		}
+	}
+	return null;
+}
+
+function applyMathElements(elements: readonly MathElementState[]): void {
+	for (const { clozeId, element } of elements) {
+		element.classList.toggle(HIDDEN_MATH_CLASS, clozeId !== null);
+		if (clozeId === null) {
+			element.removeAttribute(CLOZE_ID_ATTRIBUTE);
+			element.classList.remove(HOVERED_CLASS);
+		} else {
+			element.setAttribute(CLOZE_ID_ATTRIBUTE, clozeId);
+		}
+	}
 }
 
 function findClozeIdAtPosition(
