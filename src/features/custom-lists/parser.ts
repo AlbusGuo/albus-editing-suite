@@ -7,6 +7,12 @@ type NativeCounterStyle =
 	| 'lower-roman'
 	| 'upper-roman';
 
+type CounterStyle =
+	| NativeCounterStyle
+	| 'decimal'
+	| 'cjk-ideographic'
+	| 'circled-decimal';
+
 export interface CustomListEntry {
 	markerFrom: number;
 	markerColumns: number;
@@ -15,7 +21,7 @@ export interface CustomListEntry {
 }
 
 export interface MarkerSpec {
-	counterStyle: NativeCounterStyle | 'decimal';
+	counterStyle: CounterStyle;
 	prefix: string;
 	start: number;
 	suffix: string;
@@ -161,6 +167,14 @@ export function resolveMarkerSpec(pattern: string): MarkerSpec | null {
 			suffix: numeric[3] ?? '',
 		};
 	}
+	const circled = parseCircledSpec(pattern);
+	if (circled) {
+		return circled;
+	}
+	const chinese = parseChineseSpec(pattern);
+	if (chinese) {
+		return chinese;
+	}
 	return parseSymbolicSpec(pattern);
 }
 
@@ -219,11 +233,17 @@ function findPlaceholderIndex(pattern: string, token: string): number {
 }
 
 function formatCounter(
-	style: NativeCounterStyle | 'decimal',
+	style: CounterStyle,
 	value: number,
 ): string {
 	if (style === 'decimal') {
 		return String(value);
+	}
+	if (style === 'circled-decimal') {
+		return toCircledNumber(value);
+	}
+	if (style === 'cjk-ideographic') {
+		return toChineseNumber(value);
 	}
 	if (style === 'lower-alpha') {
 		return toAlphabetic(value).toLowerCase();
@@ -235,6 +255,121 @@ function formatCounter(
 		return toRoman(value).toLowerCase();
 	}
 	return toRoman(value);
+}
+
+function parseCircledSpec(pattern: string): MarkerSpec | null {
+	for (let index = 0; index < pattern.length; index++) {
+		const character = pattern.charAt(index);
+		const start = fromCircledNumber(character);
+		if (start !== null) {
+			return {
+				counterStyle: 'circled-decimal',
+				prefix: pattern.slice(0, index),
+				start,
+				suffix: pattern.slice(index + character.length),
+			};
+		}
+	}
+	return null;
+}
+
+function parseChineseSpec(pattern: string): MarkerSpec | null {
+	const match = /[零〇一二三四五六七八九十百千]+/u.exec(pattern);
+	if (!match) {
+		return null;
+	}
+	const start = fromChineseNumber(match[0]);
+	if (start === null) {
+		return null;
+	}
+	return {
+		counterStyle: 'cjk-ideographic',
+		prefix: pattern.slice(0, match.index),
+		start,
+		suffix: pattern.slice(match.index + match[0].length),
+	};
+}
+
+function toCircledNumber(value: number): string {
+	if (value >= 1 && value <= 20) {
+		return String.fromCodePoint(0x245f + value);
+	}
+	if (value >= 21 && value <= 35) {
+		return String.fromCodePoint(0x3250 + value - 20);
+	}
+	if (value >= 36 && value <= 50) {
+		return String.fromCodePoint(0x32b0 + value - 35);
+	}
+	return String(value);
+}
+
+function fromCircledNumber(character: string): number | null {
+	const codePoint = character.codePointAt(0);
+	if (codePoint === undefined) {
+		return null;
+	}
+	if (codePoint >= 0x2460 && codePoint <= 0x2473) {
+		return codePoint - 0x245f;
+	}
+	if (codePoint >= 0x3251 && codePoint <= 0x325f) {
+		return codePoint - 0x3250 + 20;
+	}
+	if (codePoint >= 0x32b1 && codePoint <= 0x32bf) {
+		return codePoint - 0x32b0 + 35;
+	}
+	return null;
+}
+
+function toChineseNumber(value: number): string {
+	if (!Number.isInteger(value) || value <= 0 || value > 9999) {
+		return String(value);
+	}
+	const digits = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+	const units = ['', '十', '百', '千'];
+	let output = '';
+	let zeroPending = false;
+	for (let unit = 3; unit >= 0; unit--) {
+		const divisor = 10 ** unit;
+		const digit = Math.floor(value / divisor) % 10;
+		if (digit === 0) {
+			zeroPending = output.length > 0;
+			continue;
+		}
+		if (zeroPending) {
+			output += '零';
+			zeroPending = false;
+		}
+		if (!(digit === 1 && unit === 1 && output.length === 0)) {
+			output += digits[digit];
+		}
+		output += units[unit];
+	}
+	return output;
+}
+
+function fromChineseNumber(text: string): number | null {
+	const digitValues: Readonly<Record<string, number>> = {
+		'零': 0, '〇': 0, '一': 1, '二': 2, '三': 3, '四': 4,
+		'五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
+	};
+	const unitValues: Readonly<Record<string, number>> = {
+		'十': 10, '百': 100, '千': 1000,
+	};
+	let result = 0;
+	let digit = 0;
+	for (const character of text) {
+		if (character in digitValues) {
+			digit = digitValues[character] ?? 0;
+			continue;
+		}
+		const unit = unitValues[character];
+		if (!unit) {
+			return null;
+		}
+		result += (digit || 1) * unit;
+		digit = 0;
+	}
+	return result + digit || null;
 }
 
 function toAlphabetic(value: number): string {
@@ -308,7 +443,10 @@ function isWideCodePoint(codePoint: number): boolean {
 			(codePoint >= 0xff00 && codePoint <= 0xff60) ||
 			(codePoint >= 0xffe0 && codePoint <= 0xffe6) ||
 			(codePoint >= 0x1f300 && codePoint <= 0x1faff) ||
-			(codePoint >= 0x20000 && codePoint <= 0x3fffd)
+			(codePoint >= 0x20000 && codePoint <= 0x3fffd) ||
+			(codePoint >= 0x2460 && codePoint <= 0x2473) ||
+			(codePoint >= 0x3251 && codePoint <= 0x325f) ||
+			(codePoint >= 0x32b1 && codePoint <= 0x32bf)
 		)
 	);
 }

@@ -2,6 +2,7 @@ import { MarkdownView, type Plugin } from 'obsidian';
 import type { ListMarkerColor } from '../../settings';
 import { getAppDocuments } from '../../utils/app-documents';
 import type { FeatureController } from '../controller';
+import { registerCustomListCommands } from './commands';
 import { createCustomListEditorExtension } from './editor-extension';
 import { createCompactListSpacingExtension } from './compact-spacing';
 import { renderCustomLists } from './reading-renderer';
@@ -31,6 +32,7 @@ export function registerCustomLists(
 		}
 	};
 
+	registerCustomListCommands(plugin, isEnabled);
 	plugin.registerEditorExtension(createCustomListEditorExtension(isEnabled));
 	plugin.registerEditorExtension(
 		createCompactListSpacingExtension(isEnabled),

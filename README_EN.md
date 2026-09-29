@@ -137,6 +137,7 @@ Main text{{📝This is a sidenote}}
 - Configurable for the left or right side
 - Presented in a popover when horizontal space is insufficient
 - Supports Markdown, math, and image rendering
+- Uses Obsidian's native formatting-token color for `{{📝` and `}}` while editing source
 - Converted to footnotes when printing or exporting to PDF
 - Nested sidenotes are not supported
 
@@ -156,7 +157,9 @@ Add a marker directive to the first item of an ordinary Markdown ordered list:
 2. Second item
 ```
 
-Numeric, upper- and lowercase alphabetic, upper- and lowercase Roman, and custom prefix or suffix formats are supported. The underlying document remains an Obsidian ordered list, preserving native indentation, folding, and list interactions.
+Numeric, Chinese numeral, circled number from 1 through 50, upper- and lowercase alphabetic, upper- and lowercase Roman, and custom prefix or suffix formats are supported. The underlying document remains an Obsidian ordered list, preserving native indentation, folding, and list interactions.
+
+The `Ordered list - ...` commands create common native, parenthesized, circled, bracketed, Chinese, alphabetic, and Roman marker styles. Running a command inside an existing list converts that list, while running it on plain text or a selection creates an Obsidian ordered list with the selected marker style.
 
 Append `-` after the marker directive to remove the visual spacing between the list and adjacent content. This works in the main document, quotes, Callouts, and nested lists, independently of experimental mode alignment:
 

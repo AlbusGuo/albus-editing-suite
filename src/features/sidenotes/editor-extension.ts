@@ -39,6 +39,10 @@ interface SidenoteFieldValue {
 	selectionSignature: string;
 }
 
+const SIDENOTE_FORMATTING_DECORATION = Decoration.mark({
+	class: 'editing-suite-sidenote-formatting',
+});
+
 export function createSidenoteEditorExtension(
 	host: SidenoteEditorHost,
 ): Extension {
@@ -101,10 +105,7 @@ function createFieldValue(
 	items: IndexedSidenote[] = buildSidenoteIndex(state),
 ): SidenoteFieldValue {
 	const selectionSignature = getSelectionSignature(state, items);
-	if (
-		!host.isEnabled() ||
-		state.field(editorLivePreviewField, false) === false
-	) {
+	if (!host.isEnabled()) {
 		return {
 			atomicRanges: Decoration.none,
 			decorations: Decoration.none,
@@ -115,7 +116,23 @@ function createFieldValue(
 
 	const decorations: Range<Decoration>[] = [];
 	const atomicRanges: Range<Decoration>[] = [];
+	const livePreview = state.field(editorLivePreviewField, false) !== false;
 	for (const item of items) {
+		if (!livePreview || selectionTouchesItem(state, item)) {
+			decorations.push(
+				SIDENOTE_FORMATTING_DECORATION.range(
+					item.from,
+					item.contentFrom,
+				),
+				SIDENOTE_FORMATTING_DECORATION.range(
+					item.contentTo,
+					item.to,
+				),
+			);
+		}
+		if (!livePreview) {
+			continue;
+		}
 		decorations.push(
 			Decoration.widget({
 				side: -2,

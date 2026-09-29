@@ -22,6 +22,7 @@ import {
 
 const ANCHOR_CLASS = 'editing-suite-reading-sidenote-anchor';
 const PRINT_FOOTNOTES_CLASS = 'editing-suite-print-footnotes';
+const MAX_RENDER_RETRIES = 6;
 
 interface IndexedSidenote extends SidenoteMatch {
 	number: number;
@@ -74,6 +75,8 @@ export class SidenoteReadingRenderer {
 	private readonly cleanups = new WeakMap<HTMLElement, () => void>();
 	private readonly originals = new WeakMap<HTMLElement, DocumentFragment>();
 	private readonly references = new WeakMap<HTMLElement, HTMLElement>();
+	private readonly retryAttempts = new WeakMap<HTMLElement, number>();
+	private readonly retryPending = new WeakSet<HTMLElement>();
 
 	constructor(
 		private readonly app: App,
@@ -99,7 +102,7 @@ export class SidenoteReadingRenderer {
 		}
 		const liveContent = this.getLiveEditorContent(context.sourcePath);
 		if (liveContent !== null) {
-			this.applySourceIndex(
+			this.applyOrRetry(
 				element,
 				context,
 				createSourceIndex(liveContent),
@@ -108,7 +111,7 @@ export class SidenoteReadingRenderer {
 		}
 		return this.getSourceIndex(context.sourcePath).then((sourceIndex) => {
 			if (sourceIndex && this.isEnabled()) {
-				this.applySourceIndex(element, context, sourceIndex);
+				this.applyOrRetry(element, context, sourceIndex);
 			}
 		});
 	}
@@ -157,14 +160,66 @@ export class SidenoteReadingRenderer {
 		return content;
 	}
 
-	private applySourceIndex(
+	private applyOrRetry(
 		element: HTMLElement,
 		context: MarkdownPostProcessorContext,
 		sourceIndex: SourceIndex,
 	): void {
+		if (this.applySourceIndex(element, context, sourceIndex)) {
+			this.retryAttempts.delete(element);
+			return;
+		}
+		this.scheduleRetry(element, context, sourceIndex);
+	}
+
+	private scheduleRetry(
+		element: HTMLElement,
+		context: MarkdownPostProcessorContext,
+		sourceIndex: SourceIndex,
+	): void {
+		const attempts = this.retryAttempts.get(element) ?? 0;
+		if (
+			attempts >= MAX_RENDER_RETRIES ||
+			this.retryPending.has(element)
+		) {
+			return;
+		}
+		this.retryPending.add(element);
+		this.retryAttempts.set(element, attempts + 1);
+		const run = (): void => {
+			this.retryPending.delete(element);
+			if (!element.isConnected || !this.isEnabled()) {
+				return;
+			}
+			const liveContent = this.getLiveEditorContent(context.sourcePath);
+			const currentIndex = liveContent === null
+				? sourceIndex
+				: createSourceIndex(liveContent);
+			if (this.applySourceIndex(element, context, currentIndex)) {
+				this.retryAttempts.delete(element);
+				return;
+			}
+			this.scheduleRetry(element, context, currentIndex);
+		};
+		const window = element.ownerDocument.defaultView;
+		if (window) {
+			window.setTimeout(
+				run,
+				Math.min(250, 16 * 2 ** attempts),
+			);
+		} else {
+			queueMicrotask(run);
+		}
+	}
+
+	private applySourceIndex(
+		element: HTMLElement,
+		context: MarkdownPostProcessorContext,
+		sourceIndex: SourceIndex,
+	): boolean {
 		const domMatches = collectDomMatches(element);
 		if (domMatches.length === 0) {
-			return;
+			return false;
 		}
 		const section = context.getSectionInfo(element);
 		let indexedItems: IndexedSidenote[];
@@ -182,12 +237,12 @@ export class SidenoteReadingRenderer {
 				sourceIndex.items,
 			);
 			if (!fallback) {
-				return;
+				return false;
 			}
 			indexedItems = fallback;
 		}
 		if (domMatches.length !== indexedItems.length) {
-			return;
+			return false;
 		}
 		const printContainer = getPrintContainer(element);
 		for (let index = domMatches.length - 1; index >= 0; index--) {
@@ -205,6 +260,8 @@ export class SidenoteReadingRenderer {
 				}
 			}
 		}
+		this.layout.schedule();
+		return true;
 	}
 
 	private replacePrintDomMatch(

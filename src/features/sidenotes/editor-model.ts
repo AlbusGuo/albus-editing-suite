@@ -1,4 +1,3 @@
-import { syntaxTree } from '@codemirror/language';
 import {
 	type EditorState,
 	StateEffect,
@@ -6,7 +5,7 @@ import {
 } from '@codemirror/state';
 import {
 	canAffectSidenoteSyntax,
-	findSidenoteMatches,
+	findMarkdownSidenoteMatches,
 	type SidenoteMatch,
 } from './syntax';
 
@@ -22,19 +21,8 @@ export interface SidenoteLiveEdit {
 export const sidenoteLiveEditEffect =
 	StateEffect.define<SidenoteLiveEdit>();
 
-interface SyntaxNodeLike {
-	parent: SyntaxNodeLike | null;
-	type: {
-		name: string;
-	};
-}
-
 export function buildSidenoteIndex(state: EditorState): IndexedSidenote[] {
-	const tree = syntaxTree(state);
-	const matches = findSidenoteMatches(
-		state.doc.toString(),
-		(position) => isExcludedPosition(tree, position),
-	);
+	const matches = findMarkdownSidenoteMatches(state.doc.toString());
 	return matches.map((match, index) => ({
 		...match,
 		number: index + 1,
@@ -115,27 +103,4 @@ export function getSelectionSignature(
 		.filter((item) => selectionTouchesItem(state, item))
 		.map((item) => item.from)
 		.join(',');
-}
-
-function isExcludedPosition(
-	tree: ReturnType<typeof syntaxTree>,
-	position: number,
-): boolean {
-	let node: SyntaxNodeLike | null = tree.resolveInner(
-		Math.max(0, Math.min(position, Math.max(0, tree.length - 1))),
-		1,
-	);
-	while (node) {
-		const name = node.type.name.toLowerCase();
-		if (
-			name.includes('code') ||
-			name.includes('math') ||
-			name.includes('html') ||
-			name.includes('frontmatter')
-		) {
-			return true;
-		}
-		node = node.parent;
-	}
-	return false;
 }

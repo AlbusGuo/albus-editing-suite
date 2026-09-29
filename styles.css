@@ -2348,6 +2348,12 @@ body.editing-suite-cloze-enabled
 	pointer-events: none;
 }
 
+body.editing-suite-sidenotes-enabled
+	.markdown-source-view.mod-cm6
+	.editing-suite-sidenote-formatting {
+	color: var(--text-faint);
+}
+
 body.editing-suite-cloze-enabled .cm-s-obsidian
 	.editing-suite-editor-cloze-math {
 	display: inline-block;

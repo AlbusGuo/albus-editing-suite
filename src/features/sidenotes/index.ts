@@ -54,8 +54,9 @@ export function registerSidenotes(
 		isEnabled,
 		layout,
 	}));
-	plugin.registerMarkdownPostProcessor((element, context) =>
-		readingRenderer.apply(element, context),
+	plugin.registerMarkdownPostProcessor(
+		(element, context) => readingRenderer.apply(element, context),
+		-100,
 	);
 	plugin.registerEvent(plugin.app.vault.on('modify', (file) => {
 		if (file instanceof TFile) {
