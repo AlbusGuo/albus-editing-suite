@@ -138,7 +138,7 @@ export class SidenoteReferenceWidget extends WidgetType {
 			'footnote-ref editing-suite-sidenote-reference-link';
 		link.textContent = String(this.number);
 		link.setAttribute('role', 'button');
-		link.setAttribute('aria-label', `编辑边注 ${this.number}`);
+		link.setAttribute('aria-description', `编辑边注 ${this.number}`);
 		link.tabIndex = 0;
 		let suppressClickUntil = 0;
 		const findAnchor = (): HTMLElement | undefined => Array.from(
@@ -317,7 +317,8 @@ export class SidenoteMarginWidget extends WidgetType {
 			return false;
 		}
 		margin.dataset.sidenoteNumber = String(this.item.number);
-		margin.setAttribute('aria-label', `边注 ${this.item.number}`);
+		margin.removeAttribute('aria-label');
+		margin.setAttribute('aria-description', `边注 ${this.item.number}`);
 		number.textContent = String(this.item.number);
 		if (contentChanged && margin.dataset.editing !== 'true') {
 			void this.renderContent(view, content, cleanup);

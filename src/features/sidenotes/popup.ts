@@ -7,8 +7,9 @@ export function setupSidenotePopup(anchor: HTMLElement): () => void {
 	);
 	if (margin) {
 		margin.setAttribute('role', 'note');
+		margin.removeAttribute('aria-label');
 		margin.setAttribute(
-			'aria-label',
+			'aria-description',
 			`边注 ${anchor.dataset.sidenoteNumber ?? ''}`.trim(),
 		);
 		margin.tabIndex = -1;
@@ -191,16 +192,18 @@ function syncReferenceState(
 		link.setAttribute('aria-expanded', String(expanded));
 		if (popupOnly) {
 			link.setAttribute('aria-haspopup', 'dialog');
+			link.removeAttribute('aria-label');
 			link.setAttribute(
-				'aria-label',
+				'aria-description',
 				`打开边注 ${anchor.dataset.sidenoteNumber ?? ''}`.trim(),
 			);
 			link.setAttribute('role', 'button');
 			link.tabIndex = 0;
 		} else {
 			link.removeAttribute('aria-haspopup');
+			link.removeAttribute('aria-label');
 			link.setAttribute(
-				'aria-label',
+				'aria-description',
 				sourceReference
 					? `编辑边注 ${anchor.dataset.sidenoteNumber ?? ''}`.trim()
 					: `边注 ${anchor.dataset.sidenoteNumber ?? ''}`.trim(),

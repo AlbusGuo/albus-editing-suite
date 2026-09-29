@@ -384,7 +384,10 @@ export class SidenoteReadingRenderer {
 		referenceLink.className =
 			'footnote-ref editing-suite-sidenote-reference-link';
 		referenceLink.textContent = String(item.number);
-		referenceLink.setAttribute('aria-label', `边注 ${item.number}`);
+		referenceLink.setAttribute(
+			'aria-description',
+			`边注 ${item.number}`,
+		);
 		referenceLink.tabIndex = -1;
 		const openPopup = (focusPopup: boolean): void => {
 			if (!anchor.classList.contains('is-popup-only')) {
