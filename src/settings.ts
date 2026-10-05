@@ -6,6 +6,7 @@ interface FeatureSettings {
 	customLists: boolean;
 	inlineCode: boolean;
 	negativeHeadings: boolean;
+	proofEnd: boolean;
 	sidenotes: boolean;
 }
 
@@ -67,6 +68,7 @@ const DEFAULT_SETTINGS: EditingSuiteSettings = {
 		customLists: true,
 		inlineCode: true,
 		negativeHeadings: true,
+		proofEnd: true,
 		sidenotes: true,
 	},
 	linkStyle: 'default',
@@ -145,6 +147,10 @@ export function normalizeSettings(
 			negativeHeadings: readBoolean(
 				features.negativeHeadings,
 				DEFAULT_SETTINGS.features.negativeHeadings,
+			),
+			proofEnd: readBoolean(
+				features.proofEnd,
+				DEFAULT_SETTINGS.features.proofEnd,
 			),
 			sidenotes: readBoolean(
 				features.sidenotes,

@@ -13,6 +13,7 @@ import { registerLinkStyles } from './features/links';
 import { registerMathAdjustments } from './features/math';
 import { registerNegativeHeadings } from './features/negative-headings';
 import { registerNoteFonts } from './features/note-font';
+import { registerProofEnd } from './features/proof-end';
 import { registerSidenotes } from './features/sidenotes';
 import { registerTableAdjustments } from './features/tables';
 import {
@@ -107,6 +108,10 @@ export default class EditingSuitePlugin extends Plugin {
 			registerNegativeHeadings(
 				this,
 				() => this.settings.features.negativeHeadings,
+			),
+			registerProofEnd(
+				this,
+				() => this.settings.features.proofEnd,
 			),
 			registerSidenotes(
 				this,

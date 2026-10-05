@@ -171,6 +171,10 @@ Append `-` after the marker directive to remove the visual spacing between the l
 > 2. Second item
 ```
 
+### Special characters
+
+When `Q. E. D.` is enabled, an isolated `█` is placed at the inline end of its line in Live Preview and Reading view. When its source line becomes the focus indicator's active line, the original `█` position is restored for editing or deletion.
+
 ## Settings
 
 The settings interface contains two pages:

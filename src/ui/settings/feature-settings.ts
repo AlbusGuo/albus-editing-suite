@@ -166,4 +166,21 @@ export function renderFeatureSettings(
 					});
 				}));
 	});
+
+	const specialCharactersGroup = new SettingGroup(contentEl)
+		.setHeading('特殊字符');
+
+	specialCharactersGroup.addSetting((setting) => {
+		setting
+			.setName('Q. E. D.')
+			.setDesc('将独立的 █ 渲染为当前行右侧的证明结束标记')
+			.addToggle((toggle) => toggle
+				.setValue(plugin.settings.features.proofEnd)
+				.onChange((value) => {
+					plugin.settings.features.proofEnd = value;
+					void plugin.saveSettings().then(() => {
+						plugin.refreshFeatures();
+					});
+				}));
+	});
 }

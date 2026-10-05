@@ -1341,6 +1341,27 @@ body.editing-suite-custom-lists-enabled
 	inline-size: var(--editing-suite-custom-list-marker-width, 3ch);
 }
 
+body.editing-suite-proof-end-enabled .editing-suite-proof-end {
+	display: inline-block;
+	float: right;
+	float: inline-end;
+	margin-inline-start: 1em;
+	color: var(--text-normal);
+	font-style: normal;
+	font-weight: var(--font-bold);
+}
+
+body.editing-suite-proof-end-enabled
+	.markdown-rendered
+	:is(p, li, h1, h2, h3, h4, h5, h6):has(.editing-suite-proof-end)::after,
+body.editing-suite-proof-end-enabled
+	.markdown-source-view.mod-cm6
+	.cm-line:has(.editing-suite-proof-end)::after {
+	content: '';
+	display: block;
+	clear: both;
+}
+
 body.editing-suite-sidenotes-enabled .editing-suite-sidenote-anchor {
 	display: inline-block;
 	position: relative;
