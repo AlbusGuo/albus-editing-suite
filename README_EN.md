@@ -132,6 +132,9 @@ Use the following syntax to place a note beside the main text:
 Main text{{📝This is a sidenote}}
 ```
 
+Spaces and tabs are allowed inside the delimiters, for example
+`{{📝 This is a sidenote }}`.
+
 - Numbered automatically in document order
 - Anchored to the corresponding text and moved down when notes overlap
 - Configurable for the left or right side

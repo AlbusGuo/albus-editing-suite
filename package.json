@@ -1,6 +1,6 @@
 {
 	"name": "albus-editing-suite",
-	"version": "1.4.0",
+	"version": "1.4.1",
 	"description": "Enhances Obsidian's built-in editing capabilities and Markdown syntax.",
 	"main": "dist/main.js",
 	"type": "module",

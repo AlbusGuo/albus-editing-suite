@@ -26,6 +26,7 @@ import {
 	SIDENOTE_CLOSING,
 	SIDENOTE_OPENING,
 	findSidenoteMatches,
+	hasValidSidenoteSourceBounds,
 } from './syntax';
 import { getEditorSidenoteInstanceId } from './instance-id';
 import { observeSidenoteImages } from './image-support';
@@ -473,11 +474,9 @@ export class SidenoteMarginWidget extends WidgetType {
 		state: EditorState,
 		item: IndexedSidenote,
 	): boolean {
-		return (
-			state.doc.sliceString(item.from, item.contentFrom) ===
-				SIDENOTE_OPENING &&
-			state.doc.sliceString(item.contentTo, item.to) ===
-				SIDENOTE_CLOSING
+		return hasValidSidenoteSourceBounds(
+			state.doc.sliceString(item.from, item.contentFrom),
+			state.doc.sliceString(item.contentTo, item.to),
 		);
 	}
 }

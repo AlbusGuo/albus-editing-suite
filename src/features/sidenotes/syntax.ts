@@ -13,6 +13,22 @@ export type SidenotePositionFilter = (position: number) => boolean;
 export const SIDENOTE_OPENING = '{{📝';
 export const SIDENOTE_CLOSING = '}}';
 
+export function hasValidSidenoteSourceBounds(
+	prefix: string,
+	suffix: string,
+): boolean {
+	return (
+		prefix.startsWith(SIDENOTE_OPENING) &&
+		isHorizontalWhitespaceOnly(
+			prefix.slice(SIDENOTE_OPENING.length),
+		) &&
+		suffix.endsWith(SIDENOTE_CLOSING) &&
+		isHorizontalWhitespaceOnly(
+			suffix.slice(0, -SIDENOTE_CLOSING.length),
+		)
+	);
+}
+
 export function canAffectSidenoteSyntax(text: string): boolean {
 	return /[{}]|📝/u.test(text);
 }
@@ -30,19 +46,33 @@ export function findSidenoteMatches(
 			break;
 		}
 
-		const contentFrom = opening + SIDENOTE_OPENING.length;
-		const closing = findClosingDelimiter(text, contentFrom, isExcluded);
+		const rawContentFrom = opening + SIDENOTE_OPENING.length;
+		const closing = findClosingDelimiter(
+			text,
+			rawContentFrom,
+			isExcluded,
+		);
 		if (closing < 0) {
-			searchFrom = contentFrom;
+			searchFrom = rawContentFrom;
 			continue;
 		}
 
-		const content = text.slice(contentFrom, closing);
+		const contentFrom = skipHorizontalWhitespaceForward(
+			text,
+			rawContentFrom,
+			closing,
+		);
+		const contentTo = skipHorizontalWhitespaceBackward(
+			text,
+			closing,
+			contentFrom,
+		);
+		const content = text.slice(contentFrom, contentTo);
 		if (hasValidInlineMarkBoundaries(content)) {
 			matches.push({
 				content,
 				contentFrom,
-				contentTo: closing,
+				contentTo,
 				from: opening,
 				to: closing + SIDENOTE_CLOSING.length,
 			});
@@ -193,8 +223,7 @@ function findOpeningDelimiter(
 		if (
 			!isEscaped(text, position) &&
 			!isExcluded(position) &&
-			contentStart < text.length &&
-			!isWhitespace(text.charAt(contentStart))
+			contentStart < text.length
 		) {
 			return position;
 		}
@@ -239,11 +268,6 @@ function findClosingDelimiter(
 			position++;
 			continue;
 		}
-		const preceding = text.charAt(position - 1);
-		if (!preceding || isWhitespace(preceding)) {
-			position++;
-			continue;
-		}
 		return position;
 	}
 	return -1;
@@ -260,8 +284,45 @@ function isEscaped(text: string, position: number): boolean {
 	return backslashes % 2 === 1;
 }
 
-function isWhitespace(character: string): boolean {
-	return /\s/u.test(character);
+function isHorizontalWhitespace(character: string): boolean {
+	return character === ' ' || character === '\t';
+}
+
+function isHorizontalWhitespaceOnly(text: string): boolean {
+	for (const character of text) {
+		if (!isHorizontalWhitespace(character)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+function skipHorizontalWhitespaceForward(
+	text: string,
+	position: number,
+	limit: number,
+): number {
+	while (
+		position < limit &&
+		isHorizontalWhitespace(text.charAt(position))
+	) {
+		position++;
+	}
+	return position;
+}
+
+function skipHorizontalWhitespaceBackward(
+	text: string,
+	position: number,
+	limit: number,
+): number {
+	while (
+		position > limit &&
+		isHorizontalWhitespace(text.charAt(position - 1))
+	) {
+		position--;
+	}
+	return position;
 }
 
 function isBlankLineStart(text: string, position: number): boolean {
